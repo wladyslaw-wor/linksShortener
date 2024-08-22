@@ -44,6 +44,10 @@ class Click(db.Model):
     ip_address = db.Column(db.String(45))
     location = db.Column(db.Text)
 
+@api.route("/")
+def hello():
+    return "It works! ❤️"
+
 # Создание сокращенной ссылки
 @api.route('/api/shortener/shorten')
 class ShortenURL(Resource):
