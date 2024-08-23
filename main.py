@@ -44,10 +44,6 @@ class Click(db.Model):
     ip_address = db.Column(db.String(45))
     location = db.Column(db.Text)
 
-@api.route("/")
-def hello():
-    return "It works! ❤️"
-
 # Создание сокращенной ссылки
 @api.route('/api/shortener/shorten')
 class ShortenURL(Resource):
@@ -161,4 +157,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     port = 8080
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=True, port=port)
