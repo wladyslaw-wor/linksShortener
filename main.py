@@ -8,14 +8,25 @@ import logging
 # Настройка логгирования
 logger = logging.getLogger(__name__)
 
-# Определение моделей для Swagger
-link_model = api.model('Link', {
-    'url': fields.String(required=True, description='The original URL'),
-    'short_url': fields.String(description='The shortened URL'),
-    'created_at': fields.DateTime(description='The date the link was created'),
-    'clicks_count': fields.Integer(description='The number of clicks on the shortened URL'),
+# Модель для создания ссылки (POST запрос)
+link_request_model = api.model('LinkRequest', {
+    'url': fields.String(required=True, description='The original URL')
 })
 
+# Модель для ответа на создание ссылки
+link_response_model = api.model('LinkResponse', {
+    'short_url': fields.String(description='The shortened URL')
+})
+
+# Модель для вывода полной информации о ссылке
+link_details_model = api.model('LinkDetails', {
+    'url': fields.String(description='The original URL'),
+    'short_url': fields.String(description='The shortened URL'),
+    'created_at': fields.DateTime(description='The date the link was created'),
+    'clicks_count': fields.Integer(description='The number of clicks on the shortened URL')
+})
+
+# Модель для статистики кликов
 click_model = api.model('Click', {
     'clicked_at': fields.DateTime(description='The time the click was made'),
     'user_agent': fields.String(description='The user agent of the click'),
@@ -23,6 +34,7 @@ click_model = api.model('Click', {
     'ip_address': fields.String(description='The IP address of the click'),
     'location': fields.String(description='The location of the click based on IP')
 })
+
 
 # Модели базы данных
 class Link(db.Model):
@@ -47,8 +59,8 @@ class Click(db.Model):
 # Создание сокращенной ссылки
 @api.route('/api/shortener/shorten')
 class ShortenURL(Resource):
-    @api.expect(link_model, validate=True)
-    @api.response(201, 'Link successfully shortened')
+    @api.expect(link_request_model, validate=True)
+    @api.response(201, 'Link successfully shortened', model=link_response_model)
     def post(self):
         """Creates a shortened URL"""
         original_url = api.payload['url']
@@ -115,7 +127,7 @@ class URLStats(Resource):
 # Получаем список ссылок
 @api.route('/api/shortener/links')
 class GetLinks(Resource):
-    @api.marshal_list_with(link_model)
+    @api.marshal_list_with(link_details_model)
     def get(self):
         """Returns a list of all shortened URLs"""
         links = Link.query.all()
@@ -132,7 +144,7 @@ class GetLinks(Resource):
 # Редактирование ссылки
 @api.route('/api/shortener/edit/<string:short_url>')
 class EditLink(Resource):
-    @api.expect(link_model, validate=True)
+    @api.expect(link_request_model, validate=True)
     @api.response(200, 'Link successfully updated')
     def put(self, short_url):
         """Edits the original URL for a shortened URL"""
