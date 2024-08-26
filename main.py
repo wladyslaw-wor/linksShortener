@@ -8,25 +8,22 @@ import logging
 # Настройка логгирования
 logger = logging.getLogger(__name__)
 
-# Модель для создания ссылки (POST запрос)
+# Определение моделей для Swagger
 link_request_model = api.model('LinkRequest', {
     'url': fields.String(required=True, description='The original URL')
 })
 
-# Модель для ответа на создание ссылки
 link_response_model = api.model('LinkResponse', {
     'short_url': fields.String(description='The shortened URL')
 })
 
-# Модель для вывода полной информации о ссылке
 link_details_model = api.model('LinkDetails', {
-    'url': fields.String(description='The original URL'),
+    'original_url': fields.String(description='The original URL'),
     'short_url': fields.String(description='The shortened URL'),
     'created_at': fields.DateTime(description='The date the link was created'),
     'clicks_count': fields.Integer(description='The number of clicks on the shortened URL')
 })
 
-# Модель для статистики кликов
 click_model = api.model('Click', {
     'clicked_at': fields.DateTime(description='The time the click was made'),
     'user_agent': fields.String(description='The user agent of the click'),
@@ -34,7 +31,6 @@ click_model = api.model('Click', {
     'ip_address': fields.String(description='The IP address of the click'),
     'location': fields.String(description='The location of the click based on IP')
 })
-
 
 # Модели базы данных
 class Link(db.Model):
@@ -84,9 +80,11 @@ class ShortenURL(Resource):
         return {'short_url': request.host_url + short_url}, 201
 
 # Переадресация по сокращенной ссылке
-@api.route('/api/shortener/<string:short_url>')
+@api.route('/<string:short_url>')
 class RedirectToURL(Resource):
     def get(self, short_url):
+        # logger.debug(f'Received short URL: {short_url}')
+        # return {'message': 'Test point reached'}, 200
         """Redirects to the original URL"""
         link = Link.query.filter_by(short_url=short_url).first_or_404()
         logger.info('Redirecting short URL: %s to original URL: %s', short_url, link.original_url)
@@ -145,7 +143,7 @@ class GetLinks(Resource):
 @api.route('/api/shortener/edit/<string:short_url>')
 class EditLink(Resource):
     @api.expect(link_request_model, validate=True)
-    @api.response(200, 'Link successfully updated')
+    @api.response(200, 'Link successfully updated', model=link_details_model)
     def put(self, short_url):
         """Edits the original URL for a shortened URL"""
         link = Link.query.filter_by(short_url=short_url).first_or_404()
@@ -163,7 +161,7 @@ class EditLink(Resource):
             'message': 'Link updated successfully',
             'short_url': request.host_url + link.short_url,
             'original_url': link.original_url
-        }
+        }, 200
 
 if __name__ == '__main__':
     with app.app_context():
